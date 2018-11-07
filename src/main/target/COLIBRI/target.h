@@ -1,25 +1,26 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "COLI"
-
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #define USBD_PRODUCT_STRING "Colibri"
 #ifdef OPBL
@@ -28,54 +29,57 @@
 
 #define TARGET_XTAL_MHZ         16
 
-#define LED0                    PC14
-#define LED1                    PC13
+#define LED0_PIN                PC14
+#define LED1_PIN                PC13
 
-#define BEEPER                  PC5
+#define USE_BEEPER
+#define BEEPER_PIN              PC5
 
-#define INVERTER_PIN_USART2     PB2 // PB2 used as inverter select GPIO
+#define INVERTER_PIN_UART2      PB2 // PB2 used as inverter select GPIO
 
-#define MPU6000_CS_PIN          PC4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PC4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG_FLIP
+#define ACC_1_ALIGN             CW270_DEG_FLIP
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG_FLIP
+#define GYRO_1_ALIGN            CW270_DEG_FLIP
 
 // MPU6000 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI            PC0
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC0
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN       CW270_DEG_FLIP
 
 #define MAG_INT_EXTI            PC1
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 
-#define M25P16_CS_PIN           PB12
-#define M25P16_SPI_INSTANCE     SPI2
+#define FLASH_CS_PIN            PB12
+#define FLASH_SPI_INSTANCE      SPI2
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
 
 #define USE_VCP
-#define VBUS_SENSING_PIN        PA9
+#define USE_USB_DETECT
+#define USB_DETECT_PIN          PA9
 
 #define USE_UART1
 #define UART1_RX_PIN            PB7
 #define UART1_TX_PIN            PB6
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART2
 #define UART2_RX_PIN            PA3
@@ -93,10 +97,13 @@
 #define UART5_RX_PIN            PD2
 #define UART5_TX_PIN            PC12
 
-#define SERIAL_PORT_COUNT       4 //VCP, UART1, UART2, UART3
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       6 //VCP, UART1, UART2, UART3, SOFTSERIAL x 2
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PA10  // (HARDARE=0,PPM)
 
 #define USE_SPI
 
@@ -113,19 +120,17 @@
 #define SPI2_MOSI_PIN           PC3
 
 #define USE_I2C
+#define USE_I2C_DEVICE_3
 #define I2C_DEVICE              (I2CDEV_3)
 #define I2C3_SCL                PA8
 #define I2C3_SDA                PC9
 
-#define LED_STRIP
-
 // alternative defaults for Colibri/Gemini target
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

@@ -37,6 +37,7 @@
 
 #include <stdbool.h>
 #include "drivers/system.h"
+#include "drivers/usb_io.h"
 #include "drivers/nvic.h"
 
 #include "common/utils.h"
@@ -54,6 +55,11 @@ extern __IO uint32_t receiveLength;                          // HJI
 uint8_t receiveBuffer[64];                                   // HJI
 uint32_t sendLength;                                          // HJI
 static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len);
+static void (*ctrlLineStateCb)(void *context, uint16_t ctrlLineState);
+static void *ctrlLineStateCbContext;
+static void (*baudRateCb)(void *context, uint32_t baud);
+static void *baudRateCbContext;
+
 /* Extern variables ----------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -85,30 +91,7 @@ void Set_System(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 #endif /* STM32L1XX_XD */
 
-    /*Pull down PA12 to create USB Disconnect Pulse*/     // HJI
-#if defined(STM32F303xC)                                    // HJI
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);   // HJI
-
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;          // HJI
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;     // HJI
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;        // HJI
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;        // HJI
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;     // HJI
-#else
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE); // HJI
-
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;// HJI
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;// HJI
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;// HJI
-#endif
-
-    GPIO_Init(GPIOA, &GPIO_InitStructure);                // HJI
-
-    GPIO_ResetBits(GPIOA, GPIO_Pin_12);                   // HJI
-
-    delay(200);                                           // HJI
-
-    GPIO_SetBits(GPIOA, GPIO_Pin_12);                     // HJI
+    usbGenerateDisconnectPulse();
 
 #if defined(STM32F37X) || defined(STM32F303xC)
 
@@ -133,6 +116,10 @@ void Set_System(void)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 #endif
+
+    // Initialise callbacks
+    ctrlLineStateCb = NULL;
+    baudRateCb = NULL;
 
     /* Configure the EXTI line 18 connected internally to the USB IP */
     EXTI_ClearITPendingBit(EXTI_Line18);
@@ -408,6 +395,32 @@ uint8_t usbIsConnected(void)
 uint32_t CDC_BaudRate(void)
 {
     return Virtual_Com_Port_GetBaudRate();
+}
+
+/*******************************************************************************
+ * Function Name  : CDC_SetBaudRateCb
+ * Description    : Set a callback to call when baud rate changes
+ * Input          : callback function and context.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
+{
+    baudRateCbContext = context;
+    baudRateCb = cb;
+}
+
+/*******************************************************************************
+ * Function Name  : CDC_SetCtrlLineStateCb
+ * Description    : Set a callback to call when control line state changes
+ * Input          : callback function and context.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context)
+{
+    ctrlLineStateCbContext = context;
+    ctrlLineStateCb = cb;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

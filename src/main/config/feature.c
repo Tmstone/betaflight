@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -22,60 +25,47 @@
 #include "platform.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 
-static uint32_t activeFeaturesLatch = 0;
+PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
 
-void intFeatureSet(uint32_t mask, uint32_t *features)
+PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
+    .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE | FEATURE_DYNAMIC_FILTER | FEATURE_ANTI_GRAVITY,
+);
+
+void featureSet(const uint32_t mask, uint32_t *features)
 {
     *features |= mask;
 }
 
-void intFeatureClear(uint32_t mask, uint32_t *features)
+void featureClear(const uint32_t mask, uint32_t *features)
 {
     *features &= ~(mask);
 }
 
-void intFeatureClearAll(uint32_t *features)
+bool featureIsEnabled(const uint32_t mask)
 {
-    *features = 0;
+    return featureConfig()->enabledFeatures & mask;
 }
 
-void latchActiveFeatures()
+void featureEnable(const uint32_t mask)
 {
-    activeFeaturesLatch = masterConfig.enabledFeatures;
+    featureSet(mask, &featureConfigMutable()->enabledFeatures);
 }
 
-bool featureConfigured(uint32_t mask)
+void featureDisable(const uint32_t mask)
 {
-    return masterConfig.enabledFeatures & mask;
+    featureClear(mask, &featureConfigMutable()->enabledFeatures);
 }
 
-bool feature(uint32_t mask)
+void featureDisableAll(void)
 {
-    return activeFeaturesLatch & mask;
-}
-
-void featureSet(uint32_t mask)
-{
-    intFeatureSet(mask, &masterConfig.enabledFeatures);
-}
-
-void featureClear(uint32_t mask)
-{
-    intFeatureClear(mask, &masterConfig.enabledFeatures);
-}
-
-void featureClearAll()
-{
-    intFeatureClearAll(&masterConfig.enabledFeatures);
+    featureConfigMutable()->enabledFeatures = 0;
 }
 
 uint32_t featureMask(void)
 {
-    return masterConfig.enabledFeatures;
+    return featureConfig()->enabledFeatures;
 }
-
-

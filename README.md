@@ -1,8 +1,15 @@
-![Betaflight](https://camo.githubusercontent.com/8178215d6cb90842dc95c9d437b1bdf09b2d57a7/687474703a2f2f7374617469632e726367726f7570732e6e65742f666f72756d732f6174746163686d656e74732f362f312f302f332f372f362f61393038383930302d3232382d62665f6c6f676f2e6a7067)
+![Betaflight](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/bf_logo.png)
 
 Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
 
 This fork differs from Baseflight and Cleanflight in that it focuses on flight performance, leading-edge feature additions, and wide target support.
+
+## Events
+
+| Date  | Event |
+| - | - |
+| 01 December 2018 | Start of feature freeze / Release Candidate window for Betaflight 4.0 |
+| 01 January 2019 | Planned [release](https://github.com/betaflight/betaflight/milestone/20) date for Betaflight 4.0 |
 
 ## Features
 
@@ -11,7 +18,7 @@ Betaflight has the following features:
 * Multi-color RGB LED strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, Initialization Troubleshooting, etc)
 * DShot (150, 300, 600 and 1200), Multishot, and Oneshot (125 and 42) motor protocol support
 * Blackbox flight recorder logging (to onboard flash or external microSD card where equipped)
-* Support for targets that use the STM32 F7, F4, F3 and F1 processors
+* Support for targets that use the STM32 F7, F4 and F3 processors
 * PWM, PPM, and Serial (SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
 * Multiple telemetry protocols (CSRF, FrSky, HoTT smart-port, MSP, etc)
 * RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II, X8R, X4R-SB, & XSR
@@ -25,13 +32,13 @@ Betaflight has the following features:
 
 ## Installation & Documentation
 
-See: https://github.com/betaflight/betaflight/wiki 
+See: https://github.com/betaflight/betaflight/wiki
 
 ## IRC Support and Developers Channel
 
 There's a dedicated Slack chat channel here:
 
-http://www.betaflight.tk/
+https://slack.betaflight.com/
 
 Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
 
@@ -86,20 +93,21 @@ Origins for this fork (Thanks!):
 * **timecop** (for Baseflight),
 * **Dominic Clifton** (for Cleanflight), and
 * **Sambas** (for the original STM32F4 port).
+* **borisbstyle** (Fork from Cleanflight).
 
-The Betaflight Configurator is forked from Cleanflight Configurator and its origins. 
+The Betaflight Configurator is forked from Cleanflight Configurator and its origins.
 
 Origins for Betaflight Configurator:
 * **Dominic Clifton** (for Cleanflight configurator), and
-* **ctn** (for the original Configurator). 
+* **ctn** (for the original Configurator).
 
 Big thanks to current and past contributors:
 * Budden, Martin (martinbudden)
 * Bardwell, Joshua (joshuabardwell)
 * Blackman, Jason (blckmn)
 * ctzsnooze
-* Höglund, Anders (andershoglund) 
-* Ledvin, Peter (ledvinap) - **IO code awesomeness!**
+* Höglund, Anders (andershoglund)
+* Ledvina, Petr (ledvinap) - **IO code awesomeness!**
 * kc10kevin
 * Keeble, Gary (MadmanK)
 * Keller, Michael (mikeller) - **Configurator brilliance**

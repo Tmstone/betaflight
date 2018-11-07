@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -22,20 +25,32 @@
 
 #include "platform.h"
 
+#ifdef USE_CMS
+
+#include "build/debug.h"
 #include "build/version.h"
 
-#ifdef CMS
-
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 #include "cms/cms_menu_ledstrip.h"
 
-#include "config/config_profile.h"
+#include "common/utils.h"
+
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+
+#include "flight/mixer.h"
+
+#include "rx/rx.h"
+
+#include "sensors/battery.h"
 
 //
 // Misc
@@ -71,34 +86,59 @@ static OSD_Entry cmsx_menuRcEntries[] =
 };
 
 CMS_Menu cmsx_menuRcPreview = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XRCPREV",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = cmsx_menuRcConfirmBack,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuRcEntries
 };
 
+static uint16_t motorConfig_minthrottle;
+static uint8_t motorConfig_digitalIdleOffsetValue;
+static debugType_e systemConfig_debug_mode;
+
+static long cmsx_menuMiscOnEnter(void)
+{
+    motorConfig_minthrottle = motorConfig()->minthrottle;
+    motorConfig_digitalIdleOffsetValue = motorConfig()->digitalIdleOffsetValue / 10;
+    systemConfig_debug_mode = systemConfig()->debug_mode;
+
+    return 0;
+}
+
+static long cmsx_menuMiscOnExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    motorConfigMutable()->minthrottle = motorConfig_minthrottle;
+    motorConfigMutable()->digitalIdleOffsetValue = 10 * motorConfig_digitalIdleOffsetValue;
+    systemConfigMutable()->debug_mode = systemConfig_debug_mode;
+
+    return 0;
+}
 
 static OSD_Entry menuMiscEntries[]=
 {
     { "-- MISC --", OME_Label, NULL, NULL, 0 },
 
-    { "MIN THR",    OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig()->minthrottle,         1000, 2000, 1 }, 0 },
-    { "VBAT SCALE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &batteryConfig()->vbatscale,             1, 250, 1 }, 0 },
-    { "VBAT CLMAX", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &batteryConfig()->vbatmaxcellvoltage,   10,  50, 1 }, 0 },
-    { "RC PREV",    OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
+    { "MIN THR",      OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,              1000, 2000, 1 },      0 },
+    { "DIGITAL IDLE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &motorConfig_digitalIdleOffsetValue,      0,  200, 1 },      0 },
+    { "DEBUG MODE",   OME_TAB,     NULL,          &(OSD_TAB_t) { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames },      0 },
+    { "RC PREV",      OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
 
     { "BACK", OME_Back, NULL, NULL, 0},
     { NULL, OME_END, NULL, NULL, 0}
 };
 
 CMS_Menu cmsx_menuMisc = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XMISC",
     .GUARD_type = OME_MENU,
-    .onEnter = NULL,
-    .onExit = NULL,
-    .onGlobalExit = NULL,
+#endif
+    .onEnter = cmsx_menuMiscOnEnter,
+    .onExit = cmsx_menuMiscOnExit,
     .entries = menuMiscEntries
 };
 

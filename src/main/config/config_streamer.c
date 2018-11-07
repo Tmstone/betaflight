@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <string.h>
@@ -23,9 +26,12 @@
 
 #include "config/config_streamer.h"
 
+#ifndef EEPROM_IN_RAM
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
+#endif
 
+// @todo this is not strictly correct for F4/F7, where sector sizes are variable
 #if !defined(FLASH_PAGE_SIZE)
 // F1
 # if defined(STM32F10X_MD)
@@ -37,19 +43,26 @@ extern uint8_t __config_end;
 #  define FLASH_PAGE_SIZE                 (0x800)
 // F4
 # elif defined(STM32F40_41xxx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors
 # elif defined (STM32F411xE)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
 # elif defined(STM32F427_437xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
+# elif defined (STM32F446xx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
 // F7
 #elif defined(STM32F722xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors
 # elif defined(STM32F745xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000) // 32K sectors
 # elif defined(STM32F746xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
+# elif defined(STM32F765xx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
 # elif defined(UNIT_TEST)
+#  define FLASH_PAGE_SIZE                 (0x400)
+// SIMULATOR
+# elif defined(SIMULATOR_BUILD)
 #  define FLASH_PAGE_SIZE                 (0x400)
 # else
 #  error "Flash page size not defined for target."
@@ -83,7 +96,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
 #elif defined(STM32F7)
     // NOP
-#elif defined(UNIT_TEST)
+#elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
 #else
 # error "Unsupported CPU"
@@ -91,7 +104,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->err = 0;
 }
 
-#if defined(STM32F7)
+#if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
 /*
 Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
 Sector 1    0x08008000 - 0x0800FFFF 32 Kbytes
@@ -101,6 +114,12 @@ Sector 4    0x08020000 - 0x0803FFFF 128 Kbytes
 Sector 5    0x08040000 - 0x0807FFFF 256 Kbytes
 Sector 6    0x08080000 - 0x080BFFFF 256 Kbytes
 Sector 7    0x080C0000 - 0x080FFFFF 256 Kbytes
+
+F7X5XI device with 2M flash
+Sector 8    0x08100000 - 0x0813FFFF 256 Kbytes
+Sector 9    0x08140000 - 0x0817FFFF 256 Kbytes
+Sector 10   0x08180000 - 0x081BFFFF 256 Kbytes
+Sector 11   0x081C0000 - 0x081FFFFF 256 Kbytes
 */
 
 static uint32_t getFLASHSectorForEEPROM(void)
@@ -120,6 +139,53 @@ static uint32_t getFLASHSectorForEEPROM(void)
     if ((uint32_t)&__config_start <= 0x080BFFFF)
         return FLASH_SECTOR_6;
     if ((uint32_t)&__config_start <= 0x080FFFFF)
+        return FLASH_SECTOR_7;
+#if defined(STM32F765xx)
+    if ((uint32_t)&__config_start <= 0x0813FFFF)
+        return FLASH_SECTOR_8;
+    if ((uint32_t)&__config_start <= 0x0817FFFF)
+        return FLASH_SECTOR_9;
+    if ((uint32_t)&__config_start <= 0x081BFFFF)
+        return FLASH_SECTOR_10;
+    if ((uint32_t)&__config_start <= 0x081FFFFF)
+        return FLASH_SECTOR_11;
+#endif
+
+    // Not good
+    while (1) {
+        failureMode(FAILURE_FLASH_WRITE_FAILED);
+    }
+}
+
+#elif defined(STM32F722xx)
+/*
+Sector 0    0x08000000 - 0x08003FFF 16 Kbytes
+Sector 1    0x08004000 - 0x08007FFF 16 Kbytes
+Sector 2    0x08008000 - 0x0800BFFF 16 Kbytes
+Sector 3    0x0800C000 - 0x0800FFFF 16 Kbytes
+Sector 4    0x08010000 - 0x0801FFFF 64 Kbytes
+Sector 5    0x08020000 - 0x0803FFFF 128 Kbytes
+Sector 6    0x08040000 - 0x0805FFFF 128 Kbytes
+Sector 7    0x08060000 - 0x0807FFFF 128 Kbytes
+*/
+
+static uint32_t getFLASHSectorForEEPROM(void)
+{
+    if ((uint32_t)&__config_start <= 0x08003FFF)
+        return FLASH_SECTOR_0;
+    if ((uint32_t)&__config_start <= 0x08007FFF)
+        return FLASH_SECTOR_1;
+    if ((uint32_t)&__config_start <= 0x0800BFFF)
+        return FLASH_SECTOR_2;
+    if ((uint32_t)&__config_start <= 0x0800FFFF)
+        return FLASH_SECTOR_3;
+    if ((uint32_t)&__config_start <= 0x0801FFFF)
+        return FLASH_SECTOR_4;
+    if ((uint32_t)&__config_start <= 0x0803FFFF)
+        return FLASH_SECTOR_5;
+    if ((uint32_t)&__config_start <= 0x0805FFFF)
+        return FLASH_SECTOR_6;
+    if ((uint32_t)&__config_start <= 0x0807FFFF)
         return FLASH_SECTOR_7;
 
     // Not good
@@ -193,7 +259,7 @@ static int write_word(config_streamer_t *c, uint32_t value)
         EraseInitStruct.Sector = getFLASHSectorForEEPROM();
         uint32_t SECTORError;
         const HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
-        if (status != HAL_OK){
+        if (status != HAL_OK) {
             return -1;
         }
     }

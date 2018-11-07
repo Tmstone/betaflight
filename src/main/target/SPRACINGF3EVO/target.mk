@@ -1,14 +1,10 @@
 F3_TARGETS  += $(TARGET)
-FEATURES    = VCP SDCARD
+FEATURES    = VCP SDCARD_SPI
 
 TARGET_SRC = \
-            drivers/accgyro_mpu.c \
-            drivers/accgyro_mpu6500.c \
-            drivers/accgyro_spi_mpu6500.c \
-            drivers/barometer_bmp280.c \
-            drivers/compass_ak8963.c \
-            drivers/serial_usb_vcp.c \
-            drivers/transponder_ir.c \
-            drivers/transponder_ir_stm32f30x.c \
-            io/transponder_ir.c
+            drivers/accgyro/accgyro_mpu.c \
+            drivers/accgyro/accgyro_mpu6500.c \
+            drivers/accgyro/accgyro_spi_mpu6500.c \
+            drivers/barometer/barometer_bmp280.c \
+            drivers/compass/compass_ak8963.c 
 
